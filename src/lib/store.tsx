@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { FixedCost, MarginThresholds, Product } from "./finance";
 import type { SaleRecord, AdSpend, MonthClose } from "./market-report";
-import { useAuth } from "./local-auth";
+import { financeKeyForAccount, useAuth } from "./local-auth";
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -51,7 +51,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(initial);
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
-  const key = accountId ? "rods-finance-account-v1:" + accountId : null;
+  const key = accountId ? financeKeyForAccount(accountId) : null;
 
   useEffect(() => {
     setReady(false);
