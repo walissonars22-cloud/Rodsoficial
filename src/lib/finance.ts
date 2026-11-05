@@ -161,9 +161,9 @@ export function computeTarget(mix: Mix, fixed: number, profit = 0): Target {
   const mcOf = () => perProduct.reduce((s, x) => s + x.qty * unitMargin(x.product).mc, 0);
   let adjusted = false;
   // Se o arredondamento não cobrir (ex.: produtos com MC negativa), adicionar unidades do melhor produto.
-  const best = perProduct.reduce((b, x) => (unitMargin(x.product).mc > unitMargin(b.product).mc ? x : b), perProduct[0]);
+  const best = perProduct.reduce<(typeof perProduct)[number] | undefined>((b, x) => (!b || unitMargin(x.product).mc > unitMargin(b.product).mc ? x : b), undefined);
   let guard = 0;
-  while (mcOf() + 1e-6 < mcNeeded && unitMargin(best.product).mc > 0 && guard++ < 100000) {
+  while (best && mcOf() + 1e-6 < mcNeeded && unitMargin(best.product).mc > 0 && guard++ < 100000) {
     best.qty += 1;
     adjusted = true;
   }

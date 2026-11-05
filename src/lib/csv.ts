@@ -1,5 +1,5 @@
 export function toCsv(rows: Record<string, unknown>[]) {
-  if (!rows.length) return "";
+  if (!rows.length || !rows[0]) return "";
   const keys = Object.keys(rows[0]);
   const esc = (v: unknown) => {
     const s = String(v ?? "");
@@ -10,8 +10,9 @@ export function toCsv(rows: Record<string, unknown>[]) {
 
 export function parseCsv(text: string): Record<string, string>[] {
   const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((l) => l.trim());
-  if (!lines.length) return [];
-  const sep = lines[0].includes(";") ? ";" : ",";
+  const first = lines[0];
+  if (!first) return [];
+  const sep = first.includes(";") ? ";" : ",";
   const split = (l: string) => {
     const out: string[] = [];
     let cur = "", q = false;
@@ -25,7 +26,7 @@ export function parseCsv(text: string): Record<string, string>[] {
     out.push(cur);
     return out;
   };
-  const head = split(lines[0]).map((h) => h.trim());
+  const head = split(first).map((h) => h.trim());
   return lines.slice(1).map((l) => Object.fromEntries(split(l).map((v, i) => [head[i], v.trim()])));
 }
 
