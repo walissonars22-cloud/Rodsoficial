@@ -33,10 +33,10 @@ export const dateISO = (v: unknown): string => {
   return "";
 };
 const names: Record<string, string[]> = {
-  saleId:["n de venda","numero de venda","n venda"],
+  saleId:["n de venda","n o de venda","n de vendas","numero de venda","numero da venda","n venda","n da venda"],
   date:["data de venda"],
   sku:["sku"],
-  listing:["# de anuncio","numero de anuncio"],
+  listing:["# de anuncio","numero de anuncio","n de anuncio","n o de anuncio"],
   name:["titulo do anuncio"],
   qty:["unidades"],
   revenue:["receita por produtos brl","receita por produtos"],
