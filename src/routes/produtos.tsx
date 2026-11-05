@@ -30,7 +30,7 @@ export const Route = createFileRoute("/produtos")({
 const FIELDS: (keyof Product)[] = ["name", "sku", "category", "marketplace", "active", "purchasePrice", "acquisitionFreight", "packaging", "otherProductCosts", "salePrice", "commissionPct", "fixedFee", "subsidizedFreight", "taxPct", "adsMode", "adsValue", "otherSellingCosts", "monthlyQty"];
 
 function Produtos() {
-  const { products, setProducts, thresholds, setThresholds } = useFinance();
+  const { products, setProducts, thresholds, setThresholds, sales } = useFinance();
   const [editing, setEditing] = useState<Product | null>(null);
   const [q, setQ] = useState("");
   const [mkt, setMkt] = useState("todos");
@@ -63,13 +63,14 @@ function Produtos() {
   };
 
   return (
-    <AppShell title="Produtos e precificação" subtitle="Margem de contribuição não é lucro: ela ainda precisa pagar os custos fixos."
+    <AppShell title="Produtos e precificação" subtitle="Custos de produtos importados por SKU, com opção de cadastro manual."
       actions={<div className="flex flex-wrap gap-2">
         <input ref={fileRef} type="file" accept=".csv" hidden onChange={(e) => e.target.files?.[0] && onImport(e.target.files[0])} />
         <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}><Upload /> Importar CSV</Button>
         <Button variant="outline" size="sm" onClick={() => download("produtos.csv", toCsv(products.map((p) => Object.fromEntries(FIELDS.map((k) => [k, p[k]])))))}><Download /> Exportar</Button>
         <Button size="sm" onClick={() => setEditing(emptyProduct())}><Plus /> Novo produto</Button>
       </div>}>
+      {sales.length>0 && <div className="rounded-md border bg-card p-3 text-sm">Produtos importados por SKU: {new Set(sales.map(s=>s.sku).filter(Boolean)).size}. Informe o custo unitário de compra e embalagem nos produtos pendentes. Os resultados reais ficam na aba Evolução financeira.</div>}
       <div className="flex flex-wrap items-end gap-3">
         <Input placeholder="Buscar produto, SKU ou categoria" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
         <Select value={mkt} onValueChange={setMkt}>
@@ -91,7 +92,7 @@ function Produtos() {
               const m = unitMargin(p);
               return (
                 <TableRow key={p.id} className={p.active ? "" : "opacity-50"}>
-                  <TableCell><div className="font-medium">{p.name}</div><div className="text-xs text-muted-foreground">{p.marketplace}{p.demo && <Badge variant="secondary" className="ml-2">exemplo</Badge>}{!p.active && " · inativo"}</div></TableCell>
+                  <TableCell><div className="font-medium">{p.name}</div><div className="text-xs text-muted-foreground">{p.marketplace}{sales.some(s=>s.sku===p.sku)&&!p.costConfirmed&&<Badge variant="secondary" className="ml-2">CMV pendente</Badge>}{p.demo && <Badge variant="secondary" className="ml-2">exemplo</Badge>}{!p.active && " · inativo"}</div></TableCell>
                   <TableCell className="text-xs">{p.sku}</TableCell>
                   <TableCell className="num text-right">{fmtBRL(p.purchasePrice)}</TableCell>
                   <TableCell className="num text-right">{fmtBRL(p.salePrice)}</TableCell>
@@ -170,7 +171,7 @@ function ProductDialog({ product, onClose, onSave }: { product: Product; onClose
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button disabled={!valid} onClick={() => onSave({ ...p, demo: false })}>Salvar</Button>
+          <Button disabled={!valid} onClick={() => onSave({ ...p, demo: false, costConfirmed: true })}>Salvar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
