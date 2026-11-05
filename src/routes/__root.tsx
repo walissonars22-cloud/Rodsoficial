@@ -12,7 +12,9 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { FinanceProvider } from "../lib/store";
+import { FinanceProvider, useFinance } from "../lib/store";
+import { AuthProvider, useAuth } from "../lib/auth";
+import { LoginScreen } from "../components/LoginScreen";
 
 function NotFoundComponent() {
   return (
@@ -117,15 +119,29 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function FinanceArea() {
+  const {ready,saveError}=useFinance();
+  if(!ready) return <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-5 text-center">
+    <p className="text-lg font-semibold">Abrindo seus dados financeiros...</p>
+    {saveError && <p role="alert" className="max-w-lg text-sm text-destructive">{saveError}</p>}
+  </div>;
+  return <Outlet />;
+}
+
+function PrivateArea() {
+  const {loading,user}=useAuth();
+  if(loading)return <div className="flex min-h-screen items-center justify-center text-sm">Verificando acesso...</div>;
+  if(!user)return <LoginScreen />;
+  return <FinanceProvider key={user.id}><FinanceArea /></FinanceProvider>;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <FinanceProvider>
-        <Outlet />
-      </FinanceProvider>
+      <AuthProvider>
+        <PrivateArea />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

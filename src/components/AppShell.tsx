@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { BarChart3, Package, Receipt, PieChart, Target, FlaskConical, Menu, X, Upload, Megaphone, TrendingUp } from "lucide-react";
 import { useFinance } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 
 const NAV = [
@@ -19,8 +20,8 @@ const NAV = [
 
 export function AppShell({ title, subtitle, children, actions }: { title: string; subtitle?: string; children: ReactNode; actions?: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const { products, costs, clearDemo } = useFinance();
-  const hasDemo = products.some((p) => p.demo) || costs.some((c) => c.demo);
+  const {saveError}=useFinance();
+  const {user,logout}=useAuth();
   return (
     <div className="min-h-screen lg:flex">
       <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-sidebar text-sidebar-foreground transition-transform lg:static lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
@@ -40,12 +41,12 @@ export function AppShell({ title, subtitle, children, actions }: { title: string
             </Link>
           ))}
         </nav>
-        {hasDemo && (
-          <div className="m-3 rounded-md border border-sidebar-border p-3 text-xs">
-            Você está vendo <b className="text-sidebar-primary">dados de exemplo</b>.
-            <button onClick={clearDemo} className="mt-2 block font-semibold text-sidebar-primary underline">Apagar exemplos</button>
-          </div>
-        )}
+        <div className="m-3 space-y-2 rounded-md border border-sidebar-border p-3 text-xs">
+          <div className="break-all text-sidebar-foreground/80">{user?.email}</div>
+          <Button type="button" variant="outline" size="sm" className="w-full" onClick={()=>void logout().catch(()=>{})}>
+            Sair da conta
+          </Button>
+        </div>
       </aside>
       {open && <div className="fixed inset-0 z-30 bg-foreground/40 lg:hidden" onClick={() => setOpen(false)} />}
       <main className="min-w-0 flex-1">
@@ -57,6 +58,7 @@ export function AppShell({ title, subtitle, children, actions }: { title: string
           </div>
           {actions}
         </header>
+        {saveError&&<p role="alert" className="m-4 rounded-md border border-destructive bg-card p-3 text-sm text-destructive">{saveError}</p>}
         <div className="space-y-6 p-4 lg:p-8">{children}</div>
       </main>
     </div>
