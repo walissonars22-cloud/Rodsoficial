@@ -32,14 +32,15 @@ export function summarizeMonth(month: string, sales: SaleRecord[], products: Pro
     const key=r.sku || "sem-sku:"+r.listing;
     const existing=rowsMap.get(key) ?? {sku:r.sku,name:r.name,qty:0,revenue:0,payout:0,cost:0,contribution:0,mcPct:0,pending:false};
     existing.qty+=r.qty;existing.revenue+=r.revenue;existing.payout+=r.payout;existing.cost+=cost+other;
-    existing.contribution+=r.revenue+r.saleFee+r.shippingFee+r.adjustments-cost-other;
+    existing.contribution+=r.payout-cost-other;
     existing.pending ||= missing;
     existing.mcPct=existing.revenue ? existing.contribution/existing.revenue*100 : 0;
     rowsMap.set(key,existing);
   }
   const adsTotal=ads.filter(a=>a.month===month).reduce((sum,a)=>sum+a.amount,0);
   const fixed=totalFixed(costs); // previsão mensal corrente; valor oficial fica congelado no fechamento.
-  const contribution=revenue+saleFees+shippingFees+adjustments-cmv-otherVariable-adsTotal;
+  // O repasse informado pelo Mercado Livre é a entrada efetiva: não descontar tarifas novamente.
+  const contribution=payout-cmv-otherVariable-adsTotal;
   const contributionPct=revenue ? contribution/revenue*100 : 0;
   return {month,orders:new Set(valid.map(x=>x.saleId)).size,units,revenue,payout,saleFees,shippingFees,adjustments,
     cmv,otherVariable,ads:adsTotal,fixed,contribution,contributionPct,
