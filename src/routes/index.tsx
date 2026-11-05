@@ -19,6 +19,13 @@ export const Route = createFileRoute("/")({
 const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
 const tip = (v: number) => fmtBRL(v);
 
+// Exibe apenas as duas primeiras palavras no eixo, preservando o nome completo no tooltip.
+const shortProductName = (name: string) =>
+  name.trim().split(/\s+/).filter(Boolean).slice(0, 2).join(" ").toUpperCase();
+
+const revenueLabel = (product: { sku?: string; name: string }) =>
+  product.sku?.trim() || shortProductName(product.name);
+
 function Dashboard() {
   const { products, costs, profitGoal } = useFinance();
   const s = summary(products, costs, profitGoal);
@@ -31,8 +38,12 @@ function Dashboard() {
     const u = Math.round((maxU / steps) * i);
     return { u, faturamento: u * (mix.units ? mix.revenue / mix.units : 0), custoTotal: s.fixed + u * (mix.units ? mix.variableTotal / mix.units : 0), mcAcumulada: u * mix.avgUnitMc, custosFixos: s.fixed };
   });
-  const contrib = [...mix.rows].sort((a, b) => b.mcTotal - a.mcTotal).map((r) => ({ name: r.product.name, mc: r.mcTotal }));
-  const share = mix.rows.map((r) => ({ name: r.product.name, value: r.revenue }));
+  const contrib = [...mix.rows].sort((a, b) => b.mcTotal - a.mcTotal).map((r) => ({
+    name: shortProductName(r.product.name), fullName: r.product.name, mc: r.mcTotal,
+  }));
+  const share = mix.rows.map((r) => ({
+    name: revenueLabel(r.product), fullName: r.product.name, value: r.revenue,
+  }));
   const result = [
     { name: "Faturamento", v: mix.revenue, c: "var(--chart-1)" },
     { name: "Custos variáveis", v: -mix.variableTotal, c: "var(--destructive)" },
@@ -102,7 +113,7 @@ function Dashboard() {
             <BarChart data={contrib} layout="vertical" margin={{ left: 20 }}>
               <XAxis type="number" fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
               <YAxis type="category" dataKey="name" width={130} fontSize={11} />
-              <Tooltip formatter={tip} />
+              <Tooltip formatter={tip} labelFormatter={(_, items) => String(items?.[0]?.payload?.fullName ?? "")} />
               <Bar dataKey="mc" name="MC total" radius={[0, 4, 4, 0]}>{contrib.map((c) => <Cell key={c.name} fill={c.mc >= 0 ? "var(--chart-1)" : "var(--destructive)"} />)}</Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -113,7 +124,7 @@ function Dashboard() {
               <Pie data={share} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} paddingAngle={2}>
                 {share.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Tooltip formatter={tip} />
+              <Tooltip formatter={tip} labelFormatter={(_, items) => String(items?.[0]?.payload?.fullName ?? "")} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
             </PieChart>
           </ResponsiveContainer>
