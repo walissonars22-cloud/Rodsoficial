@@ -21,17 +21,14 @@ function Importar() {
       let matrix:unknown[][];
       if (/\.csv$/i.test(file.name)) matrix=csvMatrix(await file.text());
       else if (/\.xlsx$/i.test(file.name)) {
-        // O parser XLSX do browser recebe diretamente o arquivo binário,
-        // nunca file.text(): isso corromperia o conteúdo ZIP da planilha.
-        const {default:readXlsxFile}=await import("read-excel-file/browser");
-        const sheets = await readXlsxFile(file, {getSheets:true}) as Array<{name:string}>;
+        const {readExcelWorkbook}=await import("@/lib/xlsx-reader");
+        const sheets=await readExcelWorkbook(file);
         let selected:unknown[][]|null=null;
         const problems:string[]=[];
-        for (const sheet of sheets) {
-          const rows=await readXlsxFile(file,{sheet:sheet.name}) as unknown[][];
+        for(const sheet of sheets){
           try {
-            const found=parseSalesTable(rows);
-            if(found.records.length){selected=rows;break;}
+            const found=parseSalesTable(sheet.rows);
+            if(found.records.length){selected=sheet.rows;break;}
             problems.push(sheet.name+": sem linhas válidas");
           }catch(e){problems.push(sheet.name+": "+(e instanceof Error?e.message:String(e)));}
         }
