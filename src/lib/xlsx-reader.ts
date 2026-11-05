@@ -1,8 +1,8 @@
 /** Leitor XLSX nativo no navegador: sem dependências externas.
  * Suporta ZIP/deflate padrão, sharedStrings, inline strings, datas e várias abas.
  */
-function bytes16(a: Uint8Array, p: number) { return a[p] | (a[p+1] << 8); }
-function bytes32(a: Uint8Array, p: number) { return (a[p] | (a[p+1]<<8) | (a[p+2]<<16) | (a[p+3]<<24)) >>> 0; }
+function bytes16(a: Uint8Array, p: number) { return (a[p]??0) | ((a[p+1]??0) << 8); }
+function bytes32(a: Uint8Array, p: number) { return ((a[p]??0) | ((a[p+1]??0)<<8) | ((a[p+2]??0)<<16) | ((a[p+3]??0)<<24)) >>> 0; }
 async function unzip(file: File): Promise<Map<string, Uint8Array>> {
   const src = new Uint8Array(await file.arrayBuffer());
   const end = (() => { for(let i=src.length-22;i>=Math.max(0,src.length-65557);i--) if(bytes32(src,i)===0x06054b50)return i; return -1; })();
@@ -96,7 +96,7 @@ export async function readExcelWorkbook(file:File):Promise<{name:string;rows:unk
  if(!workbookSheets.length)throw new Error("O arquivo Excel não possui planilhas.");
  return workbookSheets.map(sheet=>{
    const id=sheet.getAttribute("r:id")??sheet.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships","id");
-   const target=relationships.get(id);
+   const target=relationships.get(id??"");
    if(!target)throw new Error("Não foi possível localizar uma aba do arquivo.");
    const path=target.startsWith("/")?target.slice(1):target.startsWith("xl/")?target:"xl/"+target.replace(/^(\.\/)+/,"");
    const normalized=path.replace(/(^|\/)\.\//g,"").replace(/\/[^/]+\/\.\.\//g,"/");
