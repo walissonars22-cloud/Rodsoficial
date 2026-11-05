@@ -29,7 +29,7 @@ export function AppShell({ title, subtitle, children, actions }: { title: string
         </div>
         <nav className="space-y-1 p-3">
           {NAV.map(({ to, label, icon: Icon }) => (
-            <Link key={to} to={to} onClick={() => setOpen(false)} activeOptions={{ exact: true }}
+            <Link key={to} to={to as "/"} onClick={() => setOpen(false)} activeOptions={{ exact: true }}
               className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               activeProps={{ className: "bg-sidebar-accent text-sidebar-accent-foreground" }}>
               <Icon className="size-4" /> {label}
