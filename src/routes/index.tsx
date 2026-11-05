@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { AppShell, Kpi, Panel, Alert } from "@/components/AppShell";
 import { useFinance } from "@/lib/store";
-import { fmtBRL, fmtNum, fmtPct, summary } from "@/lib/finance";
+import { fmtBRL, fmtNum, fmtPct } from "@/lib/finance";
+import { summarizeAllPeriods } from "@/lib/report-finance";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,60 +28,70 @@ const revenueLabel = (product: { sku?: string; name: string }) =>
   product.sku?.trim() || shortProductName(product.name);
 
 function Dashboard() {
-  const { products, costs, profitGoal } = useFinance();
-  const s = summary(products, costs, profitGoal);
-  const { mix, breakeven } = s;
+  const { products, costs, sales, adSpends } = useFinance();
+  const s = summarizeAllPeriods(sales, products, adSpends, costs);
   const pos = s.operating >= 0;
+  const percentageOfRevenue = (value: number) => fmtPct(s.revenue > 0 ? value / s.revenue * 100 : 0);
+  const financialValue = (value: number) => `${fmtBRL(value)} · ${percentageOfRevenue(value)}`;
+  const variable = s.revenue - s.contribution;
+  const avgRevenuePerUnit = s.units > 0 ? s.revenue / s.units : 0;
+  const avgVariablePerUnit = s.units > 0 ? variable / s.units : 0;
+  const avgContributionPerUnit = s.units > 0 ? s.contribution / s.units : 0;
+  const beUnits = s.monthlyBreakeven !== null && avgContributionPerUnit > 0 ? Math.ceil(s.averageMonthlyFixed / avgContributionPerUnit) : 0;
 
-  const maxU = Math.max(breakeven.units * 2, mix.units * 1.2, 10);
+  const maxU = Math.max(beUnits * 2, s.units / Math.max(s.count, 1) * 1.2, 10);
   const steps = 24;
   const beData = Array.from({ length: steps + 1 }, (_, i) => {
     const u = Math.round((maxU / steps) * i);
-    return { u, faturamento: u * (mix.units ? mix.revenue / mix.units : 0), custoTotal: s.fixed + u * (mix.units ? mix.variableTotal / mix.units : 0), mcAcumulada: u * mix.avgUnitMc, custosFixos: s.fixed };
+    return { u, faturamento: u * avgRevenuePerUnit, custoTotal: s.averageMonthlyFixed + u * avgVariablePerUnit, mcAcumulada: u * avgContributionPerUnit, custosFixos: s.averageMonthlyFixed };
   });
-  const contrib = [...mix.rows].sort((a, b) => b.mcTotal - a.mcTotal).map((r) => ({
-    name: shortProductName(r.product.name), fullName: r.product.name, mc: r.mcTotal,
+  const contrib = [...s.rows].sort((a, b) => b.contribution - a.contribution).map((r) => ({
+    name: shortProductName(r.name), fullName: r.name, mc: r.contribution,
   }));
-  const share = mix.rows.map((r) => ({
-    name: revenueLabel(r.product), fullName: r.product.name, value: r.revenue,
+  const share = s.rows.map((r) => ({
+    name: revenueLabel(r), fullName: r.name, value: r.revenue,
   }));
   const result = [
-    { name: "Faturamento", v: mix.revenue, c: "var(--chart-1)" },
-    { name: "Custos variáveis", v: -mix.variableTotal, c: "var(--destructive)" },
-    { name: "Margem contrib.", v: mix.mcTotal, c: "var(--chart-3)" },
+    { name: "Vendas", v: s.revenue, c: "var(--chart-1)" },
+    { name: "Custos ML e ajustes", v: s.payout - s.revenue, c: "var(--destructive)" },
+    { name: "Demais variáveis", v: -(s.cmv + s.otherVariable + s.ads), c: "var(--destructive)" },
+    { name: "Margem contrib.", v: s.contribution, c: "var(--chart-3)" },
     { name: "Custos fixos", v: -s.fixed, c: "var(--destructive)" },
-    { name: pos ? "Lucro" : "Prejuízo", v: s.operating, c: pos ? "var(--success)" : "var(--destructive)" },
+    { name: "Resultado final", v: s.operating, c: pos ? "var(--success)" : "var(--destructive)" },
   ];
 
   return (
-    <AppShell title="Dashboard financeiro" subtitle="Resultado projetado com base nas quantidades mensais cadastradas">
-      {!mix.valid && <Alert>Informe preço, custos e quantidade mensal de ao menos um produto com margem positiva em <Link to="/produtos" className="font-semibold underline">Produtos</Link> para ver o ponto de equilíbrio.</Alert>}
-
+    <AppShell title="Dashboard financeiro" subtitle={s.count ? `Consolidado de todos os ${s.count} períodos importados · ${s.months[0]} a ${s.months.at(-1)}` : "Consolidado de todos os períodos importados"}>
+      {s.count === 0 && <Alert tone="info">Nenhuma venda importada ainda. <Link to="/importar" className="font-semibold underline">Importe o relatório do Mercado Livre</Link> para preencher os indicadores. Os valores começam em zero.</Alert>}
+      {s.count > 0 && (s.pending > 0 || s.provisional > 0 || s.discrepancies > 0) && <Alert>Consolidado preliminar: {s.pending} venda(s) sem custo confirmado, {s.provisional} venda(s) ainda provisória(s) e {s.discrepancies} divergência(s) de repasse. Revise os dados antes de interpretar o lucro.</Alert>}
       <div className="lior-hero relative overflow-hidden rounded-2xl px-7 py-8 shadow-[0_10px_32px_rgba(6,22,51,0.15)] sm:px-9">
-        <div className="lior-tracking mb-3 text-white/60">Inteligência financeira · LIOR</div>
+        <div className="lior-tracking mb-3 text-white/60">Inteligência financeira · RODS</div>
         <span className="lior-accent-line mb-4" />
-        <div className="text-sm text-white/80">Faturamento mensal necessário para cobrir todos os custos</div>
-        <div className="num mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">{breakeven.feasible ? fmtBRL(breakeven.revenue) : "—"}</div>
+        <div className="text-sm text-white/80">Resultado operacional acumulado · todos os períodos</div>
+        <div className="num mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">{fmtBRL(s.operating)}</div>
+        <div className="mt-2 text-lg font-semibold text-white/90">{fmtPct(s.operatingPct)} do faturamento bruto</div>
         <div className="mt-3 max-w-2xl text-sm leading-6 text-white/75">
-          ≈ {fmtNum(breakeven.units)} unidades no mix atual. Hoje você fatura {fmtBRL(mix.revenue)} e tem {pos ? "lucro" : "prejuízo"} operacional de <b className="num">{fmtBRL(s.operating)}</b>.
+          Vendas de <b>{fmtBRL(s.revenue)}</b> · repasse ML de <b>{fmtBRL(s.payout)}</b> · margem de contribuição de <b>{fmtBRL(s.contribution)}</b> após ADS e custos variáveis · custos fixos acumulados de <b>{fmtBRL(s.fixed)}</b>.
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        <Kpi label="Faturamento mensal" value={fmtBRL(mix.revenue)} hint="Preço × quantidade de todos os produtos." />
-        <Kpi label="Custos variáveis" value={fmtBRL(mix.variableTotal)} hint="Mercadoria, taxas, frete, impostos e anúncios." />
-        <Kpi label="Margem de contribuição" value={fmtBRL(mix.mcTotal)} hint="O que sobra das vendas para pagar os custos fixos." tone={mix.mcTotal >= 0 ? "default" : "negative"} />
-        <Kpi label="MC ponderada" value={fmtPct(mix.weightedPct * 100)} hint="De cada R$ 100 vendidos, quanto sobra." />
-        <Kpi label="Custos fixos" value={fmtBRL(s.fixed)} hint="Despesas mensais que existem mesmo sem vender." />
-        <Kpi label="Resultado operacional" value={fmtBRL(s.operating)} tone={pos ? "positive" : "negative"} hint="Margem de contribuição − custos fixos." />
-        <Kpi label="Equilíbrio (R$)" value={breakeven.feasible ? fmtBRL(breakeven.revenue) : "—"} hint="Faturamento em que o lucro é zero." />
-        <Kpi label="Equilíbrio (unid.)" value={breakeven.feasible ? fmtNum(breakeven.units) : "—"} hint="Unidades totais no mix atual." />
-        <Kpi label="Margem de segurança" value={s.safetyMargin === null ? "—" : fmtPct(s.safetyMargin)} tone={(s.safetyMargin ?? 0) >= 0 ? "positive" : "negative"} hint="Quanto as vendas podem cair antes do prejuízo." />
-        <Kpi label={`Unid. p/ lucro de ${fmtBRL(profitGoal)}`} value={s.goal.feasible ? fmtNum(s.goal.units) : "—"} hint="Ajuste a meta no Simulador." />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+        <Kpi label="Vendas acumuladas" value={financialValue(s.revenue)} hint="Receita bruta de todos os períodos · 100% de referência." />
+        <Kpi label="Custos ML e ajustes" value={financialValue(s.revenue - s.payout)} hint="Diferença entre vendas brutas e repasse real (inclui ajustes)." />
+        <Kpi label="Repasse do Mercado Livre" value={financialValue(s.payout)} hint="Valor líquido repassado pela plataforma, ainda não é lucro." />
+        <Kpi label="Custos variáveis restantes" value={financialValue(s.cmv + s.otherVariable + s.ads)} hint="CMV, custos extras e ADS. Não repete as tarifas ML." />
+        <Kpi label="Margem de contribuição" value={financialValue(s.contribution)} tone={s.contribution >= 0 ? "default" : "negative"} hint="Repasse menos os custos variáveis restantes." />
+        <Kpi label="Custos fixos acumulados" value={financialValue(s.fixed)} hint="Custos fixos mensais considerados em cada período importado." />
+        <Kpi label="Resultado operacional" value={financialValue(s.operating)} tone={pos ? "positive" : "negative"} hint="Margem de contribuição menos custos fixos · percentual sobre vendas brutas." />
+        <Kpi label="Margem de contribuição (%)" value={fmtPct(s.marginPct)} hint="MC total dividida pelas vendas de todos os períodos." />
+        <Kpi label="Equilíbrio mensal estimado" value={s.monthlyBreakeven === null ? "—" : fmtBRL(s.monthlyBreakeven)} hint="Custo fixo mensal médio ÷ margem ponderada consolidada." />
+        <Kpi label="Equilíbrio mensal (unid.)" value={s.monthlyBreakeven === null ? "—" : fmtNum(beUnits)} hint="Estimativa baseada na contribuição média por unidade vendida." />
+        <Kpi label="Pedidos / unidades" value={`${fmtNum(s.orders)} / ${fmtNum(s.units)}`} hint="Somatório de todos os meses importados." />
+        <Kpi label="Períodos importados" value={fmtNum(s.count)} hint="Meses distintos com relatórios de vendas." />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <Panel title="Ponto de equilíbrio" hint="Vermelho: prejuízo. Verde: lucro. A linha marca o equilíbrio.">
+        <Panel title="Ponto de equilíbrio mensal estimado" hint="Projeção mensal com base na margem consolidada dos períodos importados.">
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={beData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -88,10 +99,10 @@ function Dashboard() {
               <YAxis fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
               <Tooltip formatter={tip} labelFormatter={(l) => `${l} unidades`} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              {breakeven.feasible && <ReferenceArea x1={0} x2={breakeven.units} fill="var(--destructive)" fillOpacity={0.06} />}
-              {breakeven.feasible && <ReferenceArea x1={breakeven.units} x2={beData.at(-1)!.u} fill="var(--success)" fillOpacity={0.08} />}
-              {breakeven.feasible && <ReferenceLine x={breakeven.units} stroke="var(--primary)" strokeDasharray="4 4" label={{ value: "Equilíbrio", fontSize: 11, position: "top" }} />}
-              {mix.units > 0 && <ReferenceLine x={mix.units} stroke="var(--chart-4)" label={{ value: "Atual", fontSize: 11, position: "insideTopRight" }} />}
+              {s.monthlyBreakeven !== null && <ReferenceArea x1={0} x2={beUnits} fill="var(--destructive)" fillOpacity={0.06} />}
+              {s.monthlyBreakeven !== null && <ReferenceArea x1={beUnits} x2={beData.at(-1)!.u} fill="var(--success)" fillOpacity={0.08} />}
+              {s.monthlyBreakeven !== null && <ReferenceLine x={beUnits} stroke="var(--primary)" strokeDasharray="4 4" label={{ value: "Equilíbrio", fontSize: 11, position: "top" }} />}
+              {s.count > 0 && s.units > 0 && <ReferenceLine x={s.units / s.count} stroke="var(--chart-4)" label={{ value: "Atual", fontSize: 11, position: "insideTopRight" }} />}
               <Line dataKey="faturamento" name="Faturamento" stroke="var(--chart-1)" dot={false} strokeWidth={2} />
               <Line dataKey="custoTotal" name="Custo total" stroke="var(--destructive)" dot={false} strokeWidth={2} />
               <Line dataKey="mcAcumulada" name="MC acumulada" stroke="var(--chart-2)" dot={false} strokeWidth={2} />
@@ -99,7 +110,7 @@ function Dashboard() {
             </LineChart>
           </ResponsiveContainer>
         </Panel>
-        <Panel title="Resultado mensal" hint="Das vendas ao lucro: cada etapa abate custos.">
+        <Panel title="Resultado acumulado" hint="Todos os meses: vendas, custos ML, demais custos e resultado operacional.">
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={result}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -110,7 +121,7 @@ function Dashboard() {
             </BarChart>
           </ResponsiveContainer>
         </Panel>
-        <Panel title="Contribuição por produto" hint="Quanto cada produto gera, em reais, para pagar os custos fixos.">
+        <Panel title="Contribuição por produto" hint="Acumulado por produto de todos os períodos importados, antes do ADS global.">
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={contrib} layout="vertical" margin={{ left: 20 }}>
               <XAxis type="number" fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
@@ -120,7 +131,7 @@ function Dashboard() {
             </BarChart>
           </ResponsiveContainer>
         </Panel>
-        <Panel title="Composição do faturamento" hint="Participação de cada produto nas vendas.">
+        <Panel title="Composição do faturamento" hint="Participação de cada SKU nas vendas de todos os períodos.">
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie data={share} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} paddingAngle={2}>
