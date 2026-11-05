@@ -26,10 +26,10 @@ export const dateISO = (v: unknown): string => {
   const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (iso) return iso[0];
   const br = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);
-  if (br) return [br[3], br[2].padStart(2, "0"), br[1].padStart(2, "0")].join("-");
+  if (br?.[1] && br[2] && br[3]) return [br[3], br[2].padStart(2, "0"), br[1].padStart(2, "0")].join("-");
   const written = normal(s).match(/^(\d{1,2}) de ([a-z]+) de (\d{4})/);
   const months: Record<string, string> = { janeiro:"01",fevereiro:"02",marco:"03",abril:"04",maio:"05",junho:"06",julho:"07",agosto:"08",setembro:"09",outubro:"10",novembro:"11",dezembro:"12" };
-  if (written && months[written[2]]) return written[3] + "-" + months[written[2]] + "-" + written[1].padStart(2, "0");
+  if (written?.[1] && written[2] && written[3] && months[written[2]]) return written[3] + "-" + months[written[2]] + "-" + written[1].padStart(2, "0");
   return "";
 };
 const names: Record<string, string[]> = {
@@ -56,7 +56,7 @@ function headerIndex(cells: unknown[]): Record<string, number> {
   for (const [key, aliases] of Object.entries(names)) {
     const indexes = h.flatMap((x,i) => aliases.includes(x) ? [i] : []);
     // "Unidades" pode se repetir nas seções de devoluções e reclamações: usar a primeira.
-    if (indexes.length) found[key] = indexes[0];
+    if (indexes.length) found[key] = indexes[0]!;
   }
   return found;
 }
@@ -64,7 +64,7 @@ export function parseSalesTable(rows: unknown[][]): ParseResult {
   const warnings: string[] = [];
   const headerRow = rows.findIndex(r => {
     const m = headerIndex(r);
-    return m.saleId !== undefined && m.date !== undefined && m.revenue !== undefined && m.sku !== undefined;
+    return m["saleId"] !== undefined && m["date"] !== undefined && m["revenue"] !== undefined && m["sku"] !== undefined;
   });
   if (headerRow < 0) throw new Error("Cabeçalho não reconhecido. Exporte o relatório detalhado de vendas do Mercado Livre.");
   const idx = headerIndex(rows[headerRow] ?? []);
