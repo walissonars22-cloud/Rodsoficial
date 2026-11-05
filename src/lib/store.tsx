@@ -81,12 +81,26 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       const byKey = new Map(s.sales.map(r => [r.key, r]));
       for (const item of incoming) byKey.set(item.key, item);
       const products = [...s.products];
-      for (const item of incoming) {
-        if (!item.sku || products.some(p => p.sku === item.sku && p.marketplace === "Mercado Livre")) continue;
-        products.push({ ...emptyProduct(), sku: item.sku, name: item.name || item.sku,
-          salePrice: item.qty > 0 ? item.revenue / item.qty : 0, monthlyQty: 0 });
+      const allSales = [...byKey.values()];
+      const latestMonth = allSales.reduce((best, r) => r.month > best ? r.month : best, "");
+      const active = allSales.filter(r => r.month === latestMonth && !r.cancelled && r.sku);
+      const skus = new Set(allSales.filter(r => r.sku).map(r => r.sku));
+      for (const sku of skus) {
+        const line = allSales.find(r => r.sku === sku)!;
+        let product = products.find(p => p.sku === sku && p.marketplace === "Mercado Livre");
+        if (!product) {
+          product = { ...emptyProduct(), sku, name: line.name || sku };
+          products.push(product);
+        }
+        const salesForSku = active.filter(r => r.sku === sku);
+        const qty = salesForSku.reduce((sum, r) => sum + r.qty, 0);
+        const revenue = salesForSku.reduce((sum, r) => sum + r.revenue, 0);
+        if (qty > 0) {
+          product.monthlyQty = qty;
+          product.salePrice = revenue / qty;
+        }
       }
-      return { ...s, sales: [...byKey.values()], products };
+      return { ...s, sales: allSales, products };
     }),
     setAdSpends: f => setState(s => ({ ...s, adSpends: f(s.adSpends) })),
     closeMonth: snapshot => setState(s => ({ ...s, monthCloses: [...s.monthCloses.filter(x => x.month !== snapshot.month), snapshot] })),
