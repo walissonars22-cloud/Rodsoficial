@@ -24,6 +24,7 @@ export interface Product {
   otherSellingCosts: number;
   monthlyQty: number;
   demo?: boolean;
+  costConfirmed?: boolean;
 }
 
 export type Frequency = "mensal" | "trimestral" | "anual";
