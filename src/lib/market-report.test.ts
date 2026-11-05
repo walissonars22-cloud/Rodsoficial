@@ -3,6 +3,7 @@ import {csvMatrix,parseSalesTable} from "./market-report";
 import {summarizeMonth} from "./report-finance";
 import {emptyProduct} from "./store";
 describe("Importação Mercado Livre",()=>{
+ it("reconhece cabeçalho N.º de venda usado pelo Excel do ML",()=>{ const input=["N.º de venda","Data de venda","Unidades","Receita por produtos (BRL)","Tarifa de venda e impostos (BRL)","Tarifas de envio (BRL)","Total (BRL)","SKU"]; const value=["2000015798208491","31 de outubro de 2026 17:57 hs.",2,39.98,-4.8,-13.71,21.47,"AP1222"]; expect(parseSalesTable([["Vendas","Publicidade"],input,value]).records[0].payout).toBe(21.47); });
  const header=["N.º de venda","Data de venda","Estado","Unidades","Receita por produtos (BRL)","Tarifa de venda e impostos (BRL)","Tarifas de envio (BRL)","Total (BRL)","SKU","# de anúncio","Título do anúncio"];
  const row=["2000015798208491","31 de outubro de 2026 17:57 hs.","A caminho",2,"39,98","-4,8","-13,71","21,47","AP1222","MLB5070721919","Difusor Painel Corsa"];
  it("interpreta data brasileira, tarifa e repasse sem confundir com lucro",()=>{
