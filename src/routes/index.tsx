@@ -7,9 +7,9 @@ import { fmtBRL, fmtNum, fmtPct, summary } from "@/lib/finance";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard financeiro — Gestão E-commerce" },
+      { title: "Dashboard Financeiro — LIOR" },
       { name: "description", content: "Faturamento, margem de contribuição, ponto de equilíbrio e lucro do seu e-commerce em um painel." },
-      { property: "og:title", content: "Dashboard financeiro — Gestão E-commerce" },
+      { property: "og:title", content: "Dashboard Financeiro — LIOR" },
       { property: "og:description", content: "Faturamento, margem de contribuição, ponto de equilíbrio e lucro do seu e-commerce em um painel." },
     ],
   }),
@@ -56,10 +56,12 @@ function Dashboard() {
     <AppShell title="Dashboard financeiro" subtitle="Resultado projetado com base nas quantidades mensais cadastradas">
       {!mix.valid && <Alert>Informe preço, custos e quantidade mensal de ao menos um produto com margem positiva em <Link to="/produtos" className="font-semibold underline">Produtos</Link> para ver o ponto de equilíbrio.</Alert>}
 
-      <div className={`rounded-lg p-6 ${pos ? "bg-primary text-primary-foreground" : "bg-destructive text-destructive-foreground"}`}>
-        <div className="text-sm opacity-80">Para pagar todos os custos você precisa faturar por mês</div>
-        <div className="num mt-1 text-4xl font-bold">{breakeven.feasible ? fmtBRL(breakeven.revenue) : "—"}</div>
-        <div className="mt-2 text-sm opacity-90">
+      <div className="lior-hero relative overflow-hidden rounded-2xl px-7 py-8 shadow-[0_10px_32px_rgba(6,22,51,0.15)] sm:px-9">
+        <div className="lior-tracking mb-3 text-white/60">Inteligência financeira · LIOR</div>
+        <span className="lior-accent-line mb-4" />
+        <div className="text-sm text-white/80">Faturamento mensal necessário para cobrir todos os custos</div>
+        <div className="num mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">{breakeven.feasible ? fmtBRL(breakeven.revenue) : "—"}</div>
+        <div className="mt-3 max-w-2xl text-sm leading-6 text-white/75">
           ≈ {fmtNum(breakeven.units)} unidades no mix atual. Hoje você fatura {fmtBRL(mix.revenue)} e tem {pos ? "lucro" : "prejuízo"} operacional de <b className="num">{fmtBRL(s.operating)}</b>.
         </div>
       </div>

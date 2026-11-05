@@ -49,42 +49,43 @@
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.975 0.004 250);
-  --foreground: oklch(0.24 0.02 255);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.24 0.02 255);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.24 0.02 255);
-  --primary: oklch(0.3 0.08 258);
-  --primary-foreground: oklch(0.98 0.005 250);
-  --secondary: oklch(0.94 0.008 250);
-  --secondary-foreground: oklch(0.3 0.08 258);
-  --muted: oklch(0.95 0.006 250);
-  --muted-foreground: oklch(0.52 0.02 255);
-  --accent: oklch(0.93 0.02 250);
-  --accent-foreground: oklch(0.3 0.08 258);
-  --destructive: oklch(0.56 0.2 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --success: oklch(0.56 0.14 155);
-  --success-foreground: oklch(0.98 0 0);
-  --warning: oklch(0.72 0.15 75);
-  --border: oklch(0.9 0.008 250);
-  --input: oklch(0.88 0.01 250);
-  --ring: oklch(0.45 0.1 258);
-  --chart-1: oklch(0.3 0.08 258);
-  --chart-2: oklch(0.56 0.14 155);
-  --chart-3: oklch(0.6 0.1 235);
-  --chart-4: oklch(0.72 0.15 75);
-  --chart-5: oklch(0.45 0.02 255);
-  --sidebar: oklch(0.22 0.06 258);
-  --sidebar-foreground: oklch(0.85 0.02 250);
-  --sidebar-primary: oklch(0.98 0.005 250);
-  --sidebar-primary-foreground: oklch(0.22 0.06 258);
-  --sidebar-accent: oklch(0.29 0.07 258);
-  --sidebar-accent-foreground: oklch(0.98 0.005 250);
-  --sidebar-border: oklch(0.3 0.05 258);
-  --sidebar-ring: oklch(0.6 0.1 250);
+  /* Identidade LIOR: azul marinho, azul royal, branco e cinzas neutros. */
+  --radius: 0.65rem;
+  --background: #f3f5f9;
+  --foreground: #13213b;
+  --card: #ffffff;
+  --card-foreground: #13213b;
+  --popover: #ffffff;
+  --popover-foreground: #13213b;
+  --primary: #1268eb;
+  --primary-foreground: #ffffff;
+  --secondary: #edf3ff;
+  --secondary-foreground: #082049;
+  --muted: #f0f3f8;
+  --muted-foreground: #61708a;
+  --accent: #e8f0ff;
+  --accent-foreground: #0b3376;
+  --destructive: #c7344b;
+  --destructive-foreground: #ffffff;
+  --success: #168866;
+  --success-foreground: #ffffff;
+  --warning: #d28b18;
+  --border: #dfe5ee;
+  --input: #cdd7e5;
+  --ring: #277cf0;
+  --chart-1: #0b2351;
+  --chart-2: #1268eb;
+  --chart-3: #318bdc;
+  --chart-4: #7aa9ed;
+  --chart-5: #70839f;
+  --sidebar: #061633;
+  --sidebar-foreground: #dce7fa;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #071735;
+  --sidebar-accent: #123261;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1b3154;
+  --sidebar-ring: #5a9fff;
 }
 
 @layer base {
@@ -103,4 +104,41 @@
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+}
+
+/* Assinatura visual baseada no material de referência da LIOR. */
+.lior-wordmark {
+  color: #fff;
+  font-family: "Arial Black", "Manrope", sans-serif;
+  font-size: 2.05rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.12em;
+}
+.lior-wordmark--large {
+  font-size: clamp(3.4rem, 7vw, 5.8rem);
+  letter-spacing: 0.09em;
+}
+.lior-tracking {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.lior-hero {
+  background: #061633;
+  color: #fff;
+}
+.lior-accent-line {
+  display: block;
+  width: 44px;
+  height: 3px;
+  background: #1268eb;
+  border-radius: 999px;
+}
+.lior-nav-link[data-status="active"] {
+  border-left-color: #3085ff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lior-hero, .lior-nav-link { transition: none; }
 }
