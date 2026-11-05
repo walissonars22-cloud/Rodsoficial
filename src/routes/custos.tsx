@@ -40,7 +40,7 @@ function Custos() {
             <Input className="md:col-span-3" placeholder="Nome da despesa" value={c.name} onChange={(e) => upd(c.id, { name: e.target.value })} />
             <div className="md:col-span-3">
               <Select value={c.category} onValueChange={(v) => upd(c.id, { category: v })}><SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{CATS.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}</SelectContent></Select>
+                <SelectContent>{[...new Set([...CATS, c.category])].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}</SelectContent></Select>
             </div>
             <Input className="num md:col-span-2" type="number" min={0} step="0.01" value={c.amount} onChange={(e) => upd(c.id, { amount: Math.max(0, parseFloat(e.target.value) || 0) })} />
             <div className="md:col-span-2">
@@ -52,7 +52,8 @@ function Custos() {
               <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => setCosts((a) => a.filter((x) => x.id !== c.id))}><Trash2 /></Button>
             </div>
             <Input className="md:col-span-2" type="date" value={c.startDate} onChange={(e) => upd(c.id, { startDate: e.target.value })} />
-            <Input className="md:col-span-7" placeholder="Observações" value={c.notes} onChange={(e) => upd(c.id, { notes: e.target.value })} />
+            <Input className="md:col-span-2" placeholder="Categoria personalizada" value={c.category} onChange={e=>upd(c.id,{category:e.target.value})}/>
+            <Input className="md:col-span-5" placeholder="Observações" value={c.notes} onChange={(e) => upd(c.id, { notes: e.target.value })} />
             <div className="num flex items-center justify-end gap-2 text-sm text-muted-foreground md:col-span-3">
               {c.demo && <Badge variant="secondary">exemplo</Badge>}≈ {fmtBRL(monthlyEquivalent(c))}/mês
             </div>
