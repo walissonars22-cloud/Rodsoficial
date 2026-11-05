@@ -34,6 +34,7 @@ function Importar() {
   const newCount=parsed.filter(x=>!existing.has(x.key)).length;
   const skuNew=new Set(parsed.filter(x=>x.sku && !products.some(p=>p.sku===x.sku&&p.marketplace==="Mercado Livre")).map(x=>x.sku));
   return <AppShell title="Importar vendas" subtitle="Importe o relatório detalhado de vendas do Mercado Livre; não armazenamos dados do comprador">
+    <Alert tone="info">Versão inicial: os registros ainda são salvos apenas neste navegador. Não há backup em nuvem nem sincronização entre dispositivos; evite limpar os dados do navegador.</Alert>
     <Panel title="1. Selecionar relatório" hint="Aceita CSV e Excel XLSX. O relatório deve conter as colunas N.º de venda, SKU, unidades, receita e tarifas.">
       <input type="file" accept=".csv,.xlsx" disabled={busy} onChange={e=>e.target.files?.[0]&&void load(e.target.files[0])} className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground"/>
       {busy&&<p className="mt-3 text-sm">Lendo arquivo...</p>}
