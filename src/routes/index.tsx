@@ -57,7 +57,7 @@ function Dashboard() {
     { name: "Demais variáveis", v: -(s.cmv + s.otherVariable + s.ads), c: "var(--destructive)" },
     { name: "Margem contrib.", v: s.contribution, c: "var(--chart-3)" },
     { name: "Custos fixos", v: -s.fixed, c: "var(--destructive)" },
-    { name: "Resultado final", v: s.operating, c: pos ? "var(--success)" : "var(--destructive)" },
+    { name: "Resultado", v: s.operating, c: pos ? "var(--success)" : "var(--destructive)" },
   ];
 
   return (
@@ -67,7 +67,7 @@ function Dashboard() {
       <div className="lior-hero relative overflow-hidden rounded-2xl px-7 py-8 shadow-[0_10px_32px_rgba(6,22,51,0.15)] sm:px-9">
         <div className="lior-tracking mb-3 text-white/60">Inteligência financeira · RODS</div>
         <span className="lior-accent-line mb-4" />
-        <div className="text-sm text-white/80">Resultado operacional acumulado · todos os períodos</div>
+        <div className="text-sm text-white/80">Resultado acumulado · todos os períodos</div>
         <div className="num mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">{fmtBRL(s.operating)}</div>
         <div className="mt-2 text-lg font-semibold text-white/90">{fmtPct(s.operatingPct)} do faturamento bruto</div>
         <div className="mt-3 max-w-2xl text-sm leading-6 text-white/75">
@@ -76,14 +76,13 @@ function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-        <Kpi label="Vendas acumuladas" value={financialValue(s.revenue)} hint="Receita bruta de todos os períodos · 100% de referência." />
-        <Kpi label="Custos ML e ajustes" value={financialValue(s.revenue - s.payout)} hint="Diferença entre vendas brutas e repasse real (inclui ajustes)." />
-        <Kpi label="Repasse do Mercado Livre" value={financialValue(s.payout)} hint="Valor líquido repassado pela plataforma, ainda não é lucro." />
-        <Kpi label="Custos variáveis restantes" value={financialValue(s.cmv + s.otherVariable + s.ads)} hint="CMV, custos extras e ADS. Não repete as tarifas ML." />
+        <Kpi label="Vendas acumuladas" value={fmtBRL(s.revenue)} hint="Receita bruta de todos os períodos · 100% de referência." />
+        <Kpi label="Custos ML e ajustes" value={fmtBRL(s.revenue - s.payout)} hint="Diferença entre vendas brutas e repasse real (inclui ajustes)." />
+        <Kpi label="Repasse do Mercado Livre" value={fmtBRL(s.payout)} hint="Valor líquido repassado pela plataforma, ainda não é lucro." />
+        <Kpi label="Custos variáveis restantes" value={fmtBRL(s.cmv + s.otherVariable + s.ads)} hint="CMV, custos extras e ADS. Não repete as tarifas ML." />
         <Kpi label="Margem de contribuição" value={financialValue(s.contribution)} tone={s.contribution >= 0 ? "default" : "negative"} hint="Repasse menos os custos variáveis restantes." />
-        <Kpi label="Custos fixos acumulados" value={financialValue(s.fixed)} hint="Custos fixos mensais considerados em cada período importado." />
-        <Kpi label="Resultado operacional" value={financialValue(s.operating)} tone={pos ? "positive" : "negative"} hint="Margem de contribuição menos custos fixos · percentual sobre vendas brutas." />
-        <Kpi label="Margem de contribuição (%)" value={fmtPct(s.marginPct)} hint="MC total dividida pelas vendas de todos os períodos." />
+        <Kpi label="Custos fixos acumulados" value={fmtBRL(s.fixed)} hint="Custos fixos mensais considerados em cada período importado." />
+        <Kpi label="Resultado" value={financialValue(s.operating)} tone={pos ? "positive" : "negative"} hint="Margem de contribuição menos custos fixos · percentual sobre vendas brutas." />
         <Kpi label="Equilíbrio mensal estimado" value={s.monthlyBreakeven === null ? "—" : fmtBRL(s.monthlyBreakeven)} hint="Custo fixo mensal médio ÷ margem ponderada consolidada." />
         <Kpi label="Equilíbrio mensal (unid.)" value={s.monthlyBreakeven === null ? "—" : fmtNum(beUnits)} hint="Estimativa baseada na contribuição média por unidade vendida." />
         <Kpi label="Pedidos / unidades" value={`${fmtNum(s.orders)} / ${fmtNum(s.units)}`} hint="Somatório de todos os meses importados." />
