@@ -53,3 +53,44 @@ export function snapshotMonth(r: MonthSummary): MonthClose {
     variableCosts:-(r.saleFees+r.shippingFees+r.adjustments)+r.otherVariable,
     ads:r.ads,fixed:r.fixed,contribution:r.contribution,operating:r.operating,orders:r.orders,units:r.units,pending:r.pending};
 }
+
+
+/** Consolidação de todos os meses importados: mesma regra da aba Resultado do período. */
+export function summarizeAllPeriods(sales: SaleRecord[], products: Product[], ads: AdSpend[], costs: FixedCost[]) {
+  const months = [...new Set(sales.map(s => s.month).filter(Boolean))].sort();
+  const periods = months.map(month => summarizeMonth(month, sales, products, ads, costs));
+  const sum = (field: keyof MonthSummary) => periods.reduce((total, period) => {
+    const value = period[field];
+    return total + (typeof value === "number" ? value : 0);
+  }, 0);
+  const revenue = sum("revenue");
+  const contribution = sum("contribution");
+  const fixed = sum("fixed");
+  const rowsMap = new Map<string, ProductSummary>();
+  for (const period of periods) for (const row of period.rows) {
+    const key = row.sku || row.name;
+    const existing = rowsMap.get(key) ?? { ...row, qty: 0, revenue: 0, payout: 0, cost: 0, contribution: 0, mcPct: 0, pending: false };
+    existing.qty += row.qty;
+    existing.revenue += row.revenue;
+    existing.payout += row.payout;
+    existing.cost += row.cost;
+    existing.contribution += row.contribution;
+    existing.pending ||= row.pending;
+    existing.mcPct = existing.revenue > 0 ? existing.contribution / existing.revenue * 100 : 0;
+    rowsMap.set(key, existing);
+  }
+  const marginPct = revenue > 0 ? contribution / revenue * 100 : 0;
+  const averageMonthlyFixed = periods.length > 0 ? fixed / periods.length : 0;
+  const monthlyBreakeven = marginPct > 0 && sum("pending") === 0 ? averageMonthlyFixed / (marginPct / 100) : null;
+  const operating = contribution - fixed;
+  return {
+    months, periods, count: periods.length, revenue, payout: sum("payout"),
+    saleFees: sum("saleFees"), shippingFees: sum("shippingFees"), adjustments: sum("adjustments"),
+    cmv: sum("cmv"), otherVariable: sum("otherVariable"), ads: sum("ads"),
+    fixed, contribution, marginPct, operating, operatingPct: revenue > 0 ? operating / revenue * 100 : 0,
+    units: sum("units"), orders: sum("orders"), pending: sum("pending"), provisional: sum("provisional"),
+    discrepancies: sum("discrepancies"), cancelled: sum("cancelled"),
+    averageMonthlyFixed, monthlyBreakeven,
+    rows: [...rowsMap.values()].sort((a,b) => b.revenue - a.revenue),
+  };
+}
