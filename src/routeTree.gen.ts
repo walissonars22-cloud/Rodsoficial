@@ -115,9 +115,9 @@ export interface FileRouteTypes {
     | '/importar'
     | '/evolucao'
     | '/ads'
-    '/' | '/custos' | '/equilibrio' | '/mix' | '/produtos' | '/simulador'
+    | '/' | '/custos' | '/equilibrio' | '/mix' | '/produtos' | '/simulador'
   fileRoutesByTo: FileRoutesByTo
-  to: '/ads' | '/' | '/custos' | '/equilibrio' | '/mix' | '/produtos' | '/simulador'
+  to: '/resultado' | '/importar' | '/evolucao' | '/ads' | '/' | '/custos' | '/equilibrio' | '/mix' | '/produtos' | '/simulador'
   id:
     | '/resultado'
     | '/importar'
