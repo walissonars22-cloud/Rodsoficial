@@ -12,7 +12,9 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { FinanceProvider } from "../lib/store";
+import { FinanceProvider, useFinance } from "../lib/store";
+import { AuthProvider, useAuth } from "../lib/local-auth";
+import { LoginScreen } from "../components/LoginScreen";
 
 function NotFoundComponent() {
   return (
@@ -117,15 +119,25 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function PrivateFinance() {
+  const { ready, storageError } = useFinance();
+  if (!ready) return <div className="flex min-h-screen items-center justify-center p-6 text-center text-sm">
+    {storageError ?? "Carregando as informações da sua conta..."}
+  </div>;
+  return <Outlet />;
+}
+
+function AccountGate() {
+  const { user } = useAuth();
+  if (!user) return <LoginScreen />;
+  return <FinanceProvider key={user.id}><PrivateFinance /></FinanceProvider>;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <FinanceProvider>
-        <Outlet />
-      </FinanceProvider>
+      <AuthProvider><AccountGate /></AuthProvider>
     </QueryClientProvider>
   );
 }
