@@ -1,13 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { BarChart3, Package, Receipt, PieChart, Target, FlaskConical, Menu, X } from "lucide-react";
+import { BarChart3, Package, Receipt, PieChart, Target, FlaskConical, Menu, X, Upload, Megaphone, TrendingUp } from "lucide-react";
 import { useFinance } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: BarChart3 },
+  { to: "/importar", label: "Importar vendas", icon: Upload },
   { to: "/produtos", label: "Produtos e preços", icon: Package },
   { to: "/custos", label: "Custos fixos", icon: Receipt },
+  { to: "/ads", label: "Mercado Ads", icon: Megaphone },
+  { to: "/evolucao", label: "Evolução financeira", icon: TrendingUp },
   { to: "/mix", label: "Margem ponderada", icon: PieChart },
   { to: "/equilibrio", label: "Ponto de equilíbrio", icon: Target },
   { to: "/simulador", label: "Simulador", icon: FlaskConical },
@@ -22,8 +25,8 @@ export function AppShell({ title, subtitle, children, actions }: { title: string
       <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-sidebar text-sidebar-foreground transition-transform lg:static lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex items-center justify-between border-b border-sidebar-border px-5 py-5">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/60">Margem</div>
-            <div className="text-lg font-bold text-sidebar-primary">Gestão E-commerce</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/60">RODS</div>
+            <div className="text-lg font-bold text-sidebar-primary">Financeiro</div>
           </div>
           <button className="lg:hidden" onClick={() => setOpen(false)} aria-label="Fechar menu"><X className="size-5" /></button>
         </div>
