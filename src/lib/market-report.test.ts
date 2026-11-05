@@ -1,6 +1,6 @@
 import {describe,it,expect} from "vitest";
 import {csvMatrix,parseSalesTable} from "./market-report";
-import {summarizeMonth} from "./report-finance";
+import {summarizeMonth,summarizeAllPeriods} from "./report-finance";
 import {emptyProduct} from "./store";
 describe("Importação Mercado Livre",()=>{
  it("reconhece cabeçalho N.º de venda usado pelo Excel do ML",()=>{ const input=["N.º de venda","Data de venda","Unidades","Receita por produtos (BRL)","Tarifa de venda e impostos (BRL)","Tarifas de envio (BRL)","Total (BRL)","SKU"]; const value=["2000015798208491","31 de outubro de 2026 17:57 hs.",2,39.98,-4.8,-13.71,21.47,"AP1222"]; expect(parseSalesTable([["Vendas","Publicidade"],input,value]).records[0]?.payout).toBe(21.47); });
@@ -24,6 +24,21 @@ describe("Importação Mercado Livre",()=>{
   expect(s.contribution).toBeCloseTo(7.47);
   expect(s.operating).toBeCloseTo(7.47);
   expect(s.provisional).toBe(1);
+ });
+ it("consolida todos os períodos pelo repasse real sem duplicar taxas",()=>{
+  const base=parseSalesTable([header,row]).records[0]!;
+  const another={...base,key:"outro",saleId:"outro",date:"2026-11-01",month:"2026-11"};
+  const product={...emptyProduct(),sku:"AP1222",purchasePrice:6,costConfirmed:true};
+  const fixed=[{id:"f",name:"Aluguel",category:"",amount:3,frequency:"mensal" as const,startDate:"",active:true,notes:""}];
+  const s=summarizeAllPeriods([base,another],[product],[{id:"ads",month:"2026-10",name:"Ads",amount:2}],fixed);
+  expect(s.count).toBe(2);
+  expect(s.revenue).toBeCloseTo(79.96);
+  expect(s.payout).toBeCloseTo(42.94);
+  expect(s.contribution).toBeCloseTo(16.94);
+  expect(s.fixed).toBe(6);
+  expect(s.operating).toBeCloseTo(10.94);
+  expect(s.operatingPct).toBeCloseTo(10.94 / 79.96 * 100);
+  expect(s.rows[0]?.qty).toBe(4);
  });
  it("lê CSV com aspas",()=>{
   expect(csvMatrix('SKU;Título do anúncio\nAP1222;"Difusor; Corsa"')[1]?.[1]).toBe("Difusor; Corsa");
