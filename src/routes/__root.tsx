@@ -81,9 +81,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Gestão Financeira E-commerce" },
-      { name: "description", content: "Margem de contribuição, ponto de equilíbrio e simulador de lucro para marketplaces." },
-      { property: "og:title", content: "Gestão Financeira E-commerce" },
+      { title: "LIOR | Gestão Financeira de Marketplaces" },
+      { name: "description", content: "LIOR — Gestão financeira, margem de contribuição e evolução dos resultados nos marketplaces." },
+      { property: "og:title", content: "LIOR | Gestão Financeira" },
       { property: "og:description", content: "Margem de contribuição, ponto de equilíbrio e simulador de lucro para marketplaces." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
