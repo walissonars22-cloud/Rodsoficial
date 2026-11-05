@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { FixedCost, MarginThresholds, Product } from "./finance";
+import type { SaleRecord, AdSpend, MonthClose } from "./market-report";
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -35,10 +36,17 @@ interface State {
   costs: FixedCost[];
   thresholds: MarginThresholds;
   profitGoal: number;
+  sales: SaleRecord[];
+  adSpends: AdSpend[];
+  monthCloses: MonthClose[];
 }
 
 interface Ctx extends State {
   ready: boolean;
+  importSales: (incoming: SaleRecord[]) => void;
+  setAdSpends: (f: (rows: AdSpend[]) => AdSpend[]) => void;
+  closeMonth: (snapshot: MonthClose) => void;
+  reopenMonth: (month: string) => void;
   setProducts: (f: (p: Product[]) => Product[]) => void;
   setCosts: (f: (c: FixedCost[]) => FixedCost[]) => void;
   setThresholds: (t: MarginThresholds) => void;
@@ -48,7 +56,7 @@ interface Ctx extends State {
 }
 
 const KEY = "gestao-fin-v1";
-const initial: State = { products: demoProducts, costs: demoCosts, thresholds: { low: 15 }, profitGoal: 5000 };
+const initial: State = { products: demoProducts, costs: demoCosts, thresholds: { low: 15 }, profitGoal: 5000, sales: [], adSpends: [], monthCloses: [] };
 const FinanceCtx = createContext<Ctx | null>(null);
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
@@ -69,6 +77,34 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const value: Ctx = {
     ...state,
     ready,
+    importSales: (incoming) => setState(s => {
+      const byKey = new Map(s.sales.map(r => [r.key, r]));
+      for (const item of incoming) byKey.set(item.key, item);
+      const products = [...s.products];
+      const allSales = [...byKey.values()];
+      const latestMonth = allSales.reduce((best, r) => r.month > best ? r.month : best, "");
+      const active = allSales.filter(r => r.month === latestMonth && !r.cancelled && r.sku);
+      const skus = new Set(allSales.filter(r => r.sku).map(r => r.sku));
+      for (const sku of skus) {
+        const line = allSales.find(r => r.sku === sku)!;
+        let product = products.find(p => p.sku === sku && p.marketplace === "Mercado Livre");
+        if (!product) {
+          product = { ...emptyProduct(), sku, name: line.name || sku };
+          products.push(product);
+        }
+        const salesForSku = active.filter(r => r.sku === sku);
+        const qty = salesForSku.reduce((sum, r) => sum + r.qty, 0);
+        const revenue = salesForSku.reduce((sum, r) => sum + r.revenue, 0);
+        if (qty > 0) {
+          product.monthlyQty = qty;
+          product.salePrice = revenue / qty;
+        }
+      }
+      return { ...s, sales: allSales, products };
+    }),
+    setAdSpends: f => setState(s => ({ ...s, adSpends: f(s.adSpends) })),
+    closeMonth: snapshot => setState(s => ({ ...s, monthCloses: [...s.monthCloses.filter(x => x.month !== snapshot.month), snapshot] })),
+    reopenMonth: month => setState(s => ({ ...s, monthCloses: s.monthCloses.filter(x => x.month !== month) })),
     setProducts: (f) => setState((s) => ({ ...s, products: f(s.products) })),
     setCosts: (f) => setState((s) => ({ ...s, costs: f(s.costs) })),
     setThresholds: (thresholds) => setState((s) => ({ ...s, thresholds })),

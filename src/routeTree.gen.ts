@@ -10,6 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ResultadoRouteImport } from './routes/resultado'
+import { Route as ImportarRouteImport } from './routes/importar'
+import { Route as EvolucaoRouteImport } from './routes/evolucao'
+import { Route as AdsRouteImport } from './routes/ads'
 import { Route as CustosRouteImport } from './routes/custos'
 import { Route as EquilibrioRouteImport } from './routes/equilibrio'
 import { Route as MixRouteImport } from './routes/mix'
@@ -19,6 +23,26 @@ import { Route as SimuladorRouteImport } from './routes/simulador'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdsRoute = AdsRouteImport.update({
+  id: '/ads',
+  path: '/ads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EvolucaoRoute = EvolucaoRouteImport.update({
+  id: '/evolucao',
+  path: '/evolucao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImportarRoute = ImportarRouteImport.update({
+  id: '/importar',
+  path: '/importar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultadoRoute = ResultadoRouteImport.update({
+  id: '/resultado',
+  path: '/resultado',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CustosRoute = CustosRouteImport.update({
@@ -48,6 +72,10 @@ const SimuladorRoute = SimuladorRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/resultado': typeof ResultadoRoute
+  '/importar': typeof ImportarRoute
+  '/evolucao': typeof EvolucaoRoute
+  '/ads': typeof AdsRoute
   '/': typeof IndexRoute
   '/custos': typeof CustosRoute
   '/equilibrio': typeof EquilibrioRoute
@@ -56,6 +84,10 @@ export interface FileRoutesByFullPath {
   '/simulador': typeof SimuladorRoute
 }
 export interface FileRoutesByTo {
+  '/resultado': typeof ResultadoRoute
+  '/importar': typeof ImportarRoute
+  '/evolucao': typeof EvolucaoRoute
+  '/ads': typeof AdsRoute
   '/': typeof IndexRoute
   '/custos': typeof CustosRoute
   '/equilibrio': typeof EquilibrioRoute
@@ -64,6 +96,10 @@ export interface FileRoutesByTo {
   '/simulador': typeof SimuladorRoute
 }
 export interface FileRoutesById {
+  '/resultado': typeof ResultadoRoute
+  '/importar': typeof ImportarRoute
+  '/evolucao': typeof EvolucaoRoute
+  '/ads': typeof AdsRoute
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/custos': typeof CustosRoute
@@ -75,10 +111,18 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/resultado'
+    | '/importar'
+    | '/evolucao'
+    | '/ads'
     '/' | '/custos' | '/equilibrio' | '/mix' | '/produtos' | '/simulador'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/custos' | '/equilibrio' | '/mix' | '/produtos' | '/simulador'
+  to: '/ads' | '/' | '/custos' | '/equilibrio' | '/mix' | '/produtos' | '/simulador'
   id:
+    | '/resultado'
+    | '/importar'
+    | '/evolucao'
+    | '/ads'
     | '__root__'
     | '/'
     | '/custos'
@@ -89,6 +133,10 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  ResultadoRoute: typeof ResultadoRoute
+  ImportarRoute: typeof ImportarRoute
+  EvolucaoRoute: typeof EvolucaoRoute
+  AdsRoute: typeof AdsRoute
   IndexRoute: typeof IndexRoute
   CustosRoute: typeof CustosRoute
   EquilibrioRoute: typeof EquilibrioRoute
@@ -99,6 +147,34 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/resultado': {
+      id: '/resultado'
+      path: '/resultado'
+      fullPath: '/resultado'
+      preLoaderRoute: typeof ResultadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/importar': {
+      id: '/importar'
+      path: '/importar'
+      fullPath: '/importar'
+      preLoaderRoute: typeof ImportarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/evolucao': {
+      id: '/evolucao'
+      path: '/evolucao'
+      fullPath: '/evolucao'
+      preLoaderRoute: typeof EvolucaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ads': {
+      id: '/ads'
+      path: '/ads'
+      fullPath: '/ads'
+      preLoaderRoute: typeof AdsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -145,6 +221,10 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  ResultadoRoute: ResultadoRoute,
+  ImportarRoute: ImportarRoute,
+  EvolucaoRoute: EvolucaoRoute,
+  AdsRoute: AdsRoute,
   IndexRoute: IndexRoute,
   CustosRoute: CustosRoute,
   EquilibrioRoute: EquilibrioRoute,
