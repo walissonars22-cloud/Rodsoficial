@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { FixedCost, MarginThresholds, Product } from "./finance";
+import type { SaleRecord, AdSpend, MonthClose } from "./market-report";
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -35,10 +36,17 @@ interface State {
   costs: FixedCost[];
   thresholds: MarginThresholds;
   profitGoal: number;
+  sales: SaleRecord[];
+  adSpends: AdSpend[];
+  monthCloses: MonthClose[];
 }
 
 interface Ctx extends State {
   ready: boolean;
+  importSales: (incoming: SaleRecord[]) => void;
+  setAdSpends: (f: (rows: AdSpend[]) => AdSpend[]) => void;
+  closeMonth: (snapshot: MonthClose) => void;
+  reopenMonth: (month: string) => void;
   setProducts: (f: (p: Product[]) => Product[]) => void;
   setCosts: (f: (c: FixedCost[]) => FixedCost[]) => void;
   setThresholds: (t: MarginThresholds) => void;
@@ -48,7 +56,7 @@ interface Ctx extends State {
 }
 
 const KEY = "gestao-fin-v1";
-const initial: State = { products: demoProducts, costs: demoCosts, thresholds: { low: 15 }, profitGoal: 5000 };
+const initial: State = { products: demoProducts, costs: demoCosts, thresholds: { low: 15 }, profitGoal: 5000, sales: [], adSpends: [], monthCloses: [] };
 const FinanceCtx = createContext<Ctx | null>(null);
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
@@ -69,6 +77,20 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const value: Ctx = {
     ...state,
     ready,
+    importSales: (incoming) => setState(s => {
+      const byKey = new Map(s.sales.map(r => [r.key, r]));
+      for (const item of incoming) byKey.set(item.key, item);
+      const products = [...s.products];
+      for (const item of incoming) {
+        if (!item.sku || products.some(p => p.sku === item.sku && p.marketplace === "Mercado Livre")) continue;
+        products.push({ ...emptyProduct(), sku: item.sku, name: item.name || item.sku,
+          salePrice: item.qty > 0 ? item.revenue / item.qty : 0, monthlyQty: 0 });
+      }
+      return { ...s, sales: [...byKey.values()], products };
+    }),
+    setAdSpends: f => setState(s => ({ ...s, adSpends: f(s.adSpends) })),
+    closeMonth: snapshot => setState(s => ({ ...s, monthCloses: [...s.monthCloses.filter(x => x.month !== snapshot.month), snapshot] })),
+    reopenMonth: month => setState(s => ({ ...s, monthCloses: s.monthCloses.filter(x => x.month !== month) })),
     setProducts: (f) => setState((s) => ({ ...s, products: f(s.products) })),
     setCosts: (f) => setState((s) => ({ ...s, costs: f(s.costs) })),
     setThresholds: (thresholds) => setState((s) => ({ ...s, thresholds })),
