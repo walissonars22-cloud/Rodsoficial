@@ -16,7 +16,7 @@ describe("Importação Mercado Livre",()=>{
   expect(r.records).toHaveLength(1);
  });
  it("calcula CMV separado do repasse e subtrai ADS uma só vez",()=>{
-  const sale=parseSalesTable([header,row]).records[0];
+  const sale=parseSalesTable([header,row]).records[0]!;
   const product={...emptyProduct(),sku:"AP1222",purchasePrice:6,costConfirmed:true};
   const s=summarizeMonth("2026-10",[sale],[product],[{id:"a",month:"2026-10",name:"Campanha",amount:2}],[]);
   expect(s.payout).toBeCloseTo(21.47);
@@ -26,6 +26,6 @@ describe("Importação Mercado Livre",()=>{
   expect(s.provisional).toBe(1);
  });
  it("lê CSV com aspas",()=>{
-  expect(csvMatrix('SKU;Título do anúncio\nAP1222;"Difusor; Corsa"')[1][1]).toBe("Difusor; Corsa");
+  expect(csvMatrix('SKU;Título do anúncio\nAP1222;"Difusor; Corsa"')[1]?.[1]).toBe("Difusor; Corsa");
  });
 });

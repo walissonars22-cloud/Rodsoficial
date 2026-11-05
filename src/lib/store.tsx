@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { FixedCost, MarginThresholds, Product } from "./finance";
 import type { SaleRecord, AdSpend, MonthClose } from "./market-report";
+import { financeKeyForAccount, useAuth } from "./local-auth";
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -16,21 +17,6 @@ export const emptyCost = (): FixedCost => ({
   startDate: new Date().toISOString().slice(0, 10), active: true, notes: "",
 });
 
-const demoProducts: Product[] = [
-  { ...emptyProduct(), id: "d1", demo: true, name: "Fone Bluetooth X2", sku: "FON-X2", category: "Eletrônicos", purchasePrice: 38, acquisitionFreight: 3, packaging: 2.5, salePrice: 119.9, commissionPct: 14, fixedFee: 0, subsidizedFreight: 12, taxPct: 8, adsValue: 5, monthlyQty: 120 },
-  { ...emptyProduct(), id: "d2", demo: true, name: "Capinha Silicone", sku: "CAP-SIL", category: "Acessórios", marketplace: "Shopee", purchasePrice: 4.2, acquisitionFreight: 0.5, packaging: 0.8, salePrice: 29.9, commissionPct: 20, fixedFee: 4, taxPct: 8, adsValue: 3, monthlyQty: 300 },
-  { ...emptyProduct(), id: "d3", demo: true, name: "Carregador Turbo 30W", sku: "CAR-30W", category: "Eletrônicos", purchasePrice: 22, acquisitionFreight: 2, packaging: 1.5, salePrice: 69.9, commissionPct: 14, fixedFee: 6.75, taxPct: 8, adsValue: 6, monthlyQty: 150 },
-  { ...emptyProduct(), id: "d4", demo: true, name: "Smartwatch Fit", sku: "SMW-FIT", category: "Eletrônicos", marketplace: "Amazon", purchasePrice: 95, acquisitionFreight: 6, packaging: 3, salePrice: 249.9, commissionPct: 13, subsidizedFreight: 18, taxPct: 8, adsMode: "unit", adsValue: 10, monthlyQty: 40 },
-];
-
-const demoCosts: FixedCost[] = [
-  { ...emptyCost(), id: "c1", demo: true, name: "Aluguel do galpão", category: "Aluguel", amount: 2500 },
-  { ...emptyCost(), id: "c2", demo: true, name: "Pró-labore", category: "Pró-labore", amount: 4000 },
-  { ...emptyCost(), id: "c3", demo: true, name: "Contabilidade", category: "Contabilidade", amount: 600 },
-  { ...emptyCost(), id: "c4", demo: true, name: "ERP", category: "Sistema ERP", amount: 250 },
-  { ...emptyCost(), id: "c5", demo: true, name: "Certificado digital", category: "Software e assinaturas", amount: 240, frequency: "anual" },
-];
-
 interface State {
   products: Product[];
   costs: FixedCost[];
@@ -43,6 +29,7 @@ interface State {
 
 interface Ctx extends State {
   ready: boolean;
+  storageError: string | null;
   importSales: (incoming: SaleRecord[]) => void;
   setAdSpends: (f: (rows: AdSpend[]) => AdSpend[]) => void;
   closeMonth: (snapshot: MonthClose) => void;
@@ -55,28 +42,60 @@ interface Ctx extends State {
   loadDemo: () => void;
 }
 
-const KEY = "gestao-fin-v1";
-const initial: State = { products: demoProducts, costs: demoCosts, thresholds: { low: 15 }, profitGoal: 5000, sales: [], adSpends: [], monthCloses: [] };
+const initial = (): State => ({ products: [], costs: [], thresholds: { low: 15 }, profitGoal: 0, sales: [], adSpends: [], monthCloses: [] });
 const FinanceCtx = createContext<Ctx | null>(null);
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const accountId = user?.id ?? null;
   const [state, setState] = useState<State>(initial);
   const [ready, setReady] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
+  const key = accountId ? financeKeyForAccount(accountId) : null;
 
   useEffect(() => {
+    setReady(false);
+    setStorageError(null);
+    if (!key) {
+      setState(initial());
+      return;
+    }
     try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setState({ ...initial, ...JSON.parse(raw) });
-    } catch {}
-    setReady(true);
-  }, []);
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const incoming = JSON.parse(raw) as Partial<State>;
+        const zero = initial();
+        setState({
+          products: Array.isArray(incoming.products) ? incoming.products : [],
+          costs: Array.isArray(incoming.costs) ? incoming.costs : [],
+          thresholds: incoming.thresholds ?? zero.thresholds,
+          profitGoal: Number.isFinite(incoming.profitGoal) ? incoming.profitGoal! : 0,
+          sales: Array.isArray(incoming.sales) ? incoming.sales : [],
+          adSpends: Array.isArray(incoming.adSpends) ? incoming.adSpends : [],
+          monthCloses: Array.isArray(incoming.monthCloses) ? incoming.monthCloses : [],
+        });
+      } else setState(initial());
+      setReady(true);
+    } catch {
+      setStorageError("Não foi possível carregar os dados desta conta. Verifique o armazenamento do navegador.");
+      setReady(false);
+    }
+  }, [key]);
+
   useEffect(() => {
-    if (ready) localStorage.setItem(KEY, JSON.stringify(state));
-  }, [state, ready]);
+    if (!key || !ready) return;
+    try {
+      localStorage.setItem(key, JSON.stringify(state));
+      setStorageError(null);
+    } catch {
+      setStorageError("Não foi possível salvar. O armazenamento deste navegador pode estar cheio ou bloqueado.");
+    }
+  }, [key, ready, state]);
 
   const value: Ctx = {
     ...state,
     ready,
+    storageError,
     importSales: (incoming) => setState(s => {
       const byKey = new Map(s.sales.map(r => [r.key, r]));
       for (const item of incoming) byKey.set(item.key, item);
@@ -110,7 +129,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     setThresholds: (thresholds) => setState((s) => ({ ...s, thresholds })),
     setProfitGoal: (profitGoal) => setState((s) => ({ ...s, profitGoal })),
     clearDemo: () => setState((s) => ({ ...s, products: s.products.filter((p) => !p.demo), costs: s.costs.filter((c) => !c.demo) })),
-    loadDemo: () => setState((s) => ({ ...s, products: [...s.products.filter((p) => !p.demo), ...demoProducts], costs: [...s.costs.filter((c) => !c.demo), ...demoCosts] })),
+    loadDemo: () => {},
   };
   return <FinanceCtx.Provider value={value}>{children}</FinanceCtx.Provider>;
 }

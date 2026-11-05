@@ -1,0 +1,23 @@
+name: Validate local login
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - '.github/workflows/local-login.yml'
+  workflow_dispatch:
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+      - name: TypeScript check
+        run: npx tsc --noEmit
+      - name: Tests
+        run: npm run test
+      - name: Build
+        run: npm run build
