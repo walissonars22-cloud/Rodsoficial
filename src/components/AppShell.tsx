@@ -10,6 +10,7 @@ const NAV = [
   { to: "/produtos", label: "Produtos e preços", icon: Package },
   { to: "/custos", label: "Custos fixos", icon: Receipt },
   { to: "/ads", label: "Mercado Ads", icon: Megaphone },
+  { to: "/resultado", label: "Resultado do período", icon: BarChart3 },
   { to: "/evolucao", label: "Evolução financeira", icon: TrendingUp },
   { to: "/mix", label: "Margem ponderada", icon: PieChart },
   { to: "/equilibrio", label: "Ponto de equilíbrio", icon: Target },
