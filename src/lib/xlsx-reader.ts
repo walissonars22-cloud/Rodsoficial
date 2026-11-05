@@ -23,7 +23,7 @@ async function unzip(file: File): Promise<Map<string, Uint8Array>> {
     if(method===0)result.set(filename,compressedBytes);
     else if(method===8){
       if(typeof DecompressionStream==="undefined")throw new Error("Este navegador não suporta leitura de XLSX compactado. Atualize-o.");
-      const decompressed=new Response(new Blob([compressedBytes]).stream().pipeThrough(new DecompressionStream("deflate-raw")));
+      const decompressed=new Response(new Blob([Uint8Array.from(compressedBytes)]).stream().pipeThrough(new DecompressionStream("deflate-raw")));
       result.set(filename,new Uint8Array(await decompressed.arrayBuffer()));
     }else throw new Error("Formato de compactação XLSX não suportado.");
   }
