@@ -15,19 +15,39 @@ function Importar() {
   const [filename,setFilename]=useState("");
   const [busy,setBusy]=useState(false);
   async function load(file:File){
+    if(!file.size){setError("O arquivo está vazio.");return;}
     setBusy(true);setError("");setParsed([]);setFilename(file.name);
     try {
       let matrix:unknown[][];
       if (/\.csv$/i.test(file.name)) matrix=csvMatrix(await file.text());
       else if (/\.xlsx$/i.test(file.name)) {
-        const {default:readXlsxFile}=await import("read-excel-file");
-        matrix=await readXlsxFile(file) as unknown[][];
+        // O parser XLSX do browser recebe diretamente o arquivo binário,
+        // nunca file.text(): isso corromperia o conteúdo ZIP da planilha.
+        const {default:readXlsxFile}=await import("read-excel-file/browser");
+        const sheets = await readXlsxFile(file, {getSheets:true}) as Array<{name:string}>;
+        let selected:unknown[][]|null=null;
+        const problems:string[]=[];
+        for (const sheet of sheets) {
+          const rows=await readXlsxFile(file,{sheet:sheet.name}) as unknown[][];
+          try {
+            const found=parseSalesTable(rows);
+            if(found.records.length){selected=rows;break;}
+            problems.push(sheet.name+": sem linhas válidas");
+          }catch(e){problems.push(sheet.name+": "+(e instanceof Error?e.message:String(e)));}
+        }
+        if(!selected)throw new Error("Nenhuma aba contém um relatório de vendas reconhecido. "+problems.join("; "));
+        matrix=selected;
       } else throw new Error("Formato não suportado. Use .csv ou .xlsx.");
       const result=parseSalesTable(matrix);
       if(!result.records.length) throw new Error("Nenhuma venda válida encontrada no arquivo.");
       setParsed(result.records);
       setWarnings(result.warnings);
-    } catch(e){setError(e instanceof Error?e.message:"Não foi possível ler o arquivo.");}
+    } catch(e){
+      const code=(e as {code?:string})?.code;
+      if(code==="XLS_FILE_NOT_SUPPORTED")setError("Este arquivo é um Excel antigo (.xls). Salve como .xlsx no Excel e importe novamente.");
+      else if(code==="INVALID_ZIP"||code==="FILE_NOT_SUPPORTED")setError("O arquivo .xlsx está inválido ou não é um Excel verdadeiro. Exporte novamente do Mercado Livre.");
+      else setError(e instanceof Error?e.message:"Não foi possível ler o arquivo.");
+    }
     finally{setBusy(false);}
   }
   const existing=new Set(sales.map(x=>x.key));
@@ -36,7 +56,7 @@ function Importar() {
   return <AppShell title="Importar vendas" subtitle="Importe o relatório detalhado de vendas do Mercado Livre; não armazenamos dados do comprador">
     <Alert tone="info">Versão inicial: os registros ainda são salvos apenas neste navegador. Não há backup em nuvem nem sincronização entre dispositivos; evite limpar os dados do navegador.</Alert>
     <Panel title="1. Selecionar relatório" hint="Aceita CSV e Excel XLSX. O relatório deve conter as colunas N.º de venda, SKU, unidades, receita e tarifas.">
-      <input type="file" accept=".csv,.xlsx" disabled={busy} onChange={e=>e.target.files?.[0]&&void load(e.target.files[0])} className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground"/>
+      <input type="file" accept=".csv,.xlsx" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(file)void load(file);e.target.value="";}} className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground"/>
       {busy&&<p className="mt-3 text-sm">Lendo arquivo...</p>}
       {error&&<div className="mt-3"><Alert>{error}</Alert></div>}
       {filename&&<p className="mt-2 text-xs text-muted-foreground">Arquivo selecionado: {filename}</p>}
