@@ -83,7 +83,7 @@ function Equilibrio() {
         </div>
       </Panel>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi label="Faturamento de equilíbrio" value={fmtBRL(be.revenue)} hint="Custos fixos ÷ MC ponderada." />
+        <Kpi label="Faturamento de equilíbrio" value={feasible ? fmtBRL(equilibriumRevenue) : "—"} hint="Custos fixos ÷ MC ponderada." />
         <Kpi label="Unidades necessárias" value={feasible ? fmtNum(equilibriumUnits) : "—"} hint="Custos fixos ÷ MC média por unidade (arredondado para cima)." />
         <Kpi label="MC necessária" value={fmtBRL(fixed)} hint="Igual aos custos fixos." />
         <Kpi label="Margem de segurança" value={safetyMargin === null ? "—" : fmtPct(safetyMargin)} tone={(safetyMargin ?? 0) >= 0 ? "positive" : "negative"} hint="Negativa = abaixo do equilíbrio." />
