@@ -98,7 +98,7 @@ export async function readExcelWorkbook(file:File):Promise<{name:string;rows:unk
    const id=sheet.getAttribute("r:id")??sheet.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships","id");
    const target=relationships.get(id);
    if(!target)throw new Error("Não foi possível localizar uma aba do arquivo.");
-   const path=target.startsWith("/")?target.slice(1):"xl/"+target.replace(/^(\.\/)+/,"");
+   const path=target.startsWith("/")?target.slice(1):target.startsWith("xl/")?target:"xl/"+target.replace(/^(\.\/)+/,"");
    const normalized=path.replace(/(^|\/)\.\//g,"").replace(/\/[^/]+\/\.\.\//g,"/");
    const bytes=zip.get(normalized);
    if(!bytes)throw new Error("Aba não encontrada no arquivo: "+normalized);
