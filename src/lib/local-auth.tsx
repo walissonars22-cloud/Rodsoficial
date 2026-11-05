@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
  */
 const ACCOUNTS_KEY = "rods-local-accounts-v1";
 const SESSION_KEY = "rods-local-session-v1";
+export const financeKeyForAccount = (id: string) => "rods-finance-account-v1:" + id;
 
 export interface LocalUser { id: string; email: string; }
 interface Account extends LocalUser { salt: string; passwordHash: string; }
