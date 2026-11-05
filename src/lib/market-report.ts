@@ -67,7 +67,7 @@ export function parseSalesTable(rows: unknown[][]): ParseResult {
     return m.saleId !== undefined && m.date !== undefined && m.revenue !== undefined && m.sku !== undefined;
   });
   if (headerRow < 0) throw new Error("Cabeçalho não reconhecido. Exporte o relatório detalhado de vendas do Mercado Livre.");
-  const idx = headerIndex(rows[headerRow]);
+  const idx = headerIndex(rows[headerRow] ?? []);
   for (const required of ["saleId","date","sku","qty","revenue","saleFee","shippingFee","payout"]) {
     if (idx[required] === undefined) throw new Error("Coluna obrigatória ausente: " + required);
   }
